@@ -715,6 +715,7 @@ async def change_refer(
 
 @app.post("/")
 async def tts_endpoint(request: Request):
+
     json_post_raw = await request.json()
 
     model_name = json_post_raw.get("model_name")
@@ -735,6 +736,7 @@ async def tts_endpoint(request: Request):
             return None
 
     gpt_file = get_gpt_file_path(model_name, gpt_folder_path)
+    print("GPT file:", gpt_file)
 
     def get_sovits_file_path(input_name, folder_path="."):
         file_paths = []
@@ -750,6 +752,7 @@ async def tts_endpoint(request: Request):
 
     sovits_folder_path = "/home/ec2-user/tts/GPT-SoVITS/SoVITS_weights"
     sovits_file = get_sovits_file_path(model_name, sovits_folder_path)
+    print("SoVITS file:", sovits_file)
 
     change_sovits_weights(sovits_file)
     change_gpt_weights(gpt_file)
@@ -763,6 +766,8 @@ async def tts_endpoint(request: Request):
 
     folder_path = f"/home/ec2-user/tts/training_data/{model_name}/output_slicer"
     first_file = get_first_file(folder_path)
+
+    print("First file:", first_file)
 
     list_file_path = f"/home/ec2-user/tts/training_data/{model_name}/output_slicer.list"
 
@@ -780,6 +785,8 @@ async def tts_endpoint(request: Request):
 
 
     file_name = os.path.basename(first_file)
+
+    print("File name:", file_name)
 
     text = get_text_from_last_part(list_file_path, file_name)
         
