@@ -761,8 +761,6 @@ async def tts_endpoint(request: Request):
         else:
             return None
 
-    # Example usage
-    model_name = "your_model_name"  # Replace with the actual model name
     folder_path = f"/home/ec2-user/tts/training_data/{model_name}/output_slicer"
     first_file = get_first_file(folder_path)
 
