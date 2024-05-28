@@ -716,93 +716,97 @@ async def change_refer(
 @app.post("/")
 async def tts_endpoint(request: Request):
 
-    json_post_raw = await request.json()
+    try:
+        json_post_raw = await request.json()
 
-    model_name = json_post_raw.get("model_name")
-    gpt_folder_path = "/home/ec2-user/tts/GPT-SoVITS/GPT_weights"
-    import os
-    import re
+        model_name = json_post_raw.get("model_name")
+        gpt_folder_path = "/home/ec2-user/tts/GPT-SoVITS/GPT_weights"
+        import os
+        import re
 
-    def get_gpt_file_path(input_name, folder_path="."):
-        file_paths = []
-        for file in os.listdir(folder_path):
-            if file.startswith(input_name) and file.endswith(".ckpt"):
-                file_paths.append(os.path.join(folder_path, file))
+        def get_gpt_file_path(input_name, folder_path="."):
+            file_paths = []
+            for file in os.listdir(folder_path):
+                if file.startswith(input_name) and file.endswith(".ckpt"):
+                    file_paths.append(os.path.join(folder_path, file))
 
-        if file_paths:
-            file_paths.sort(key=lambda x: int(re.findall(r"-e(\d+)", x)[0]), reverse=True)
-            return file_paths[0]
-        else:
+            if file_paths:
+                file_paths.sort(key=lambda x: int(re.findall(r"-e(\d+)", x)[0]), reverse=True)
+                return file_paths[0]
+            else:
+                return None
+
+        gpt_file = get_gpt_file_path(model_name, gpt_folder_path)
+        print("GPT file:", gpt_file)
+
+        def get_sovits_file_path(input_name, folder_path="."):
+            file_paths = []
+            for file in os.listdir(folder_path):
+                if file.startswith(input_name) and file.endswith(".pth"):
+                    file_paths.append(os.path.join(folder_path, file))
+
+            if file_paths:
+                file_paths.sort(key=lambda x: int(re.findall(r"_e(\d+)", x)[0]), reverse=True)
+                return file_paths[0]
+            else:
+                return None
+
+        sovits_folder_path = "/home/ec2-user/tts/GPT-SoVITS/SoVITS_weights"
+        sovits_file = get_sovits_file_path(model_name, sovits_folder_path)
+        print("SoVITS file:", sovits_file)
+
+        change_sovits_weights(sovits_file)
+        change_gpt_weights(gpt_file)
+
+        def get_first_file(folder_path):
+            files = os.listdir(folder_path)
+            if files:
+                return os.path.join(folder_path, files[0])
+            else:
+                return None
+
+        folder_path = f"/home/ec2-user/tts/training_data/{model_name}/output_slicer"
+        first_file = get_first_file(folder_path)
+
+        print("First file:", first_file)
+
+        list_file_path = f"/home/ec2-user/tts/training_data/{model_name}/output_slicer.list"
+
+
+        def get_text_from_last_part(file_path, first_file):
+            with open(file_path, 'r') as file:
+                lines = file.readlines()
+                for line in lines:
+                    parts = line.strip().split('|')
+                    if len(parts) >= 4:
+                        name = parts[0].split('/')[-1]
+                        if name == first_file:
+                            return parts[3]
             return None
 
-    gpt_file = get_gpt_file_path(model_name, gpt_folder_path)
-    print("GPT file:", gpt_file)
 
-    def get_sovits_file_path(input_name, folder_path="."):
-        file_paths = []
-        for file in os.listdir(folder_path):
-            if file.startswith(input_name) and file.endswith(".pth"):
-                file_paths.append(os.path.join(folder_path, file))
+        file_name = os.path.basename(first_file)
 
-        if file_paths:
-            file_paths.sort(key=lambda x: int(re.findall(r"_e(\d+)", x)[0]), reverse=True)
-            return file_paths[0]
+        print("File name:", file_name)
+
+        text = get_text_from_last_part(list_file_path, file_name)
+            
+        if text:
+            print("Matching text:", text)
         else:
-            return None
+            print("No matching text found in the list file.")
 
-    sovits_folder_path = "/home/ec2-user/tts/GPT-SoVITS/SoVITS_weights"
-    sovits_file = get_sovits_file_path(model_name, sovits_folder_path)
-    print("SoVITS file:", sovits_file)
-
-    change_sovits_weights(sovits_file)
-    change_gpt_weights(gpt_file)
-
-    def get_first_file(folder_path):
-        files = os.listdir(folder_path)
-        if files:
-            return os.path.join(folder_path, files[0])
-        else:
-            return None
-
-    folder_path = f"/home/ec2-user/tts/training_data/{model_name}/output_slicer"
-    first_file = get_first_file(folder_path)
-
-    print("First file:", first_file)
-
-    list_file_path = f"/home/ec2-user/tts/training_data/{model_name}/output_slicer.list"
-
-
-    def get_text_from_last_part(file_path, first_file):
-        with open(file_path, 'r') as file:
-            lines = file.readlines()
-            for line in lines:
-                parts = line.strip().split('|')
-                if len(parts) >= 4:
-                    name = parts[0].split('/')[-1]
-                    if name == first_file:
-                        return parts[3]
-        return None
-
-
-    file_name = os.path.basename(first_file)
-
-    print("File name:", file_name)
-
-    text = get_text_from_last_part(list_file_path, file_name)
-        
-    if text:
-        print("Matching text:", text)
-    else:
-        print("No matching text found in the list file.")
-
-    return handle(
-        json_post_raw.get(first_file),
-        text,
-        "en",
-        json_post_raw.get("text"),
-        "en",
-        json_post_raw.get("cut_punc"),
-    )
+        return handle(
+            json_post_raw.get(first_file),
+            text,
+            "en",
+            json_post_raw.get("text"),
+            "en",
+            json_post_raw.get("cut_punc"),
+        )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
 
 
 @app.get("/")
