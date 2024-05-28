@@ -797,7 +797,7 @@ async def tts_endpoint(request: Request):
             print("No matching text found in the list file.")
 
         return handle(
-            json_post_raw.get(first_file),
+            first_file,
             text,
             "en",
             json_post_raw.get("text"),
