@@ -737,16 +737,16 @@ async def tts_endpoint(request: Request):
     gpt_file = get_gpt_file_path(model_name, gpt_folder_path)
 
     def get_sovits_file_path(input_name, folder_path="."):
-    file_paths = []
-    for file in os.listdir(folder_path):
-        if file.startswith(input_name) and file.endswith(".pth"):
-            file_paths.append(os.path.join(folder_path, file))
+        file_paths = []
+        for file in os.listdir(folder_path):
+            if file.startswith(input_name) and file.endswith(".pth"):
+                file_paths.append(os.path.join(folder_path, file))
 
-    if file_paths:
-        file_paths.sort(key=lambda x: int(re.findall(r"_e(\d+)", x)[0]), reverse=True)
-        return file_paths[0]
-    else:
-        return None
+        if file_paths:
+            file_paths.sort(key=lambda x: int(re.findall(r"_e(\d+)", x)[0]), reverse=True)
+            return file_paths[0]
+        else:
+            return None
 
     sovits_folder_path = "/home/ec2-user/tts/GPT-SoVITS/SoVITS_weights"
     sovits_file = get_sovits_file_path(model_name, sovits_folder_path)
