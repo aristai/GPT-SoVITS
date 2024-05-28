@@ -755,11 +755,11 @@ async def tts_endpoint(request: Request):
     change_gpt_weights(gpt_file)
 
     def get_first_file(folder_path):
-    files = os.listdir(folder_path)
-    if files:
-        return os.path.join(folder_path, files[0])
-    else:
-        return None
+        files = os.listdir(folder_path)
+        if files:
+            return os.path.join(folder_path, files[0])
+        else:
+            return None
 
     # Example usage
     model_name = "your_model_name"  # Replace with the actual model name
