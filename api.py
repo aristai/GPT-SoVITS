@@ -724,6 +724,10 @@ async def change_refer(
     return handle_change(refer_wav_path, prompt_text, prompt_language)
 
 
+@app.post("/hello")
+async def hello():
+    return "ok"
+
 @app.post("/")
 async def tts_endpoint(request: Request):
 
