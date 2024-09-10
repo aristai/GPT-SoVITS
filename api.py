@@ -807,17 +807,95 @@ async def tts_endpoint(request: Request):
         else:
             print("No matching text found in the list file.")
 
+        input_text = json_post_raw.get("text")
+        input_text = Markdown_LaTex_to_Spoken_Text(input_text)
+
         return handle(
             first_file,
             text,
             "en",
-            json_post_raw.get("text"),
+            input_text,
             "en",
             json_post_raw.get("cut_punc"),
         )
     except Exception as e:
         import traceback
         traceback.print_exc()
+
+
+def Markdown_LaTex_to_Spoken_Text(markdown_text):
+    import re
+
+    def remove_pattern_for_Markdown(text):
+        # This pattern matches anything within [[ ]] followed by anything in ( )
+        # pattern = r'\[\[.*?\]\]\(.*?\)'
+        pattern = r'\[{1,2}([^[\]]+?)\]{1,2}\((https?://[^\)]+|ftp://[^\)]+|www\.[^\)]+)\)'
+        cleaned_text = re.sub(pattern, '', text)
+        return cleaned_text
+
+    # Replace LaTeX backslashes with double backslashes for regex compatibility
+    text_for_voice = markdown_text.replace('\\', '\\\\')
+
+    # Replace common LaTeX expressions with spoken equivalents
+    replacements = {
+        r'\\\\frac{([^}]+)}{([^}]+)}': r'\1 over \2',
+        r'\\\\sqrt{([^}]+)}': r'the square root of \1',
+        r'\\\\sum_([^}]+)\\\\\^([^}]+) {([^}]+)}': r'the sum from \1 to \2 of \3',
+        r'\\\\int_([^}]+)\\\\\^([^}]+) {([^}]+)}': r'the integral from \1 to \2 of \3',
+        r'\\\\log_([^}]+) {([^}]+)}': r'log base \1 of \2',
+        r'\\\\ln {([^}]+)}': r'the natural log of \1',
+        r'\\\\sin {([^}]+)}': r'the sine of \1',
+        r'\\\\cos {([^}]+)}': r'the cosine of \1',
+        r'\\\\tan {([^}]+)}': r'the tangent of \1',
+        r'\\\\frac\{{?([^}]+)}\}?{{?([^}]+)}\}?': r'\1 over \2',
+        r'\\\\sqrt\{{?([^}]+)}\}?': r'the square root of \1',
+        r'\\\\sum_{{?([^}]+)}\}?\\\\\^{{?([^}]+)}\}? {({[^}]+})}': r'the sum from \1 to \2 of \3',
+        r'\\\\int_{{?([^}]+)}\}?\\\\\^{{?([^}]+)}\}? {({[^}]+})}': r'the integral from \1 to \2 of \3',
+        r'\\\\log_{{?([^}]+)}\}? {({[^}]+})}': r'log base \1 of \2',
+        r'\\\\ln {({[^}]+})}': r'the natural log of \1',
+        r'\\\\sin {({[^}]+})}': r'the sine of \1',
+        r'\\\\cos {({[^}]+})}': r'the cosine of \1',
+        r'\\\\tan {({[^}]+})}': r'the tangent of \1',
+        r'\\\\pi': r'pi',
+        r'\\\\alpha': r'alpha',
+        r'\\\\beta': r'beta',
+        r'\\\\gamma': r'gamma',
+        r'\\\\delta': r'delta',
+        r'\\\\epsilon': r'epsilon',
+        r'\\\\theta': r'theta',
+        r'\\\\lambda': r'lambda',
+        r'\\\\mu': r'mu',
+        r'\\\\sigma': r'sigma',
+        r'\\\\phi': r'phi',
+        r'\\\\omega': r'omega',
+        r'\\\\left\(([^}]+)\\\\right\)': r'open parenthesis \1 close parenthesis',
+        r'\\\\left\[([^}]+)\\\\right\]': r'open bracket \1 close bracket',
+        r'\\\\left\\\\{([^}]+)\\\\right\\\\}': r'open brace \1 close brace',
+        r'\\\\lim_([^}]+) {([^}]+)}': r'the limit as \1 approaches \2',
+        r'(\w)\^2': r'\1 squared',
+        r'\^': r' to the power of ',
+        r'\_': r' sub ',
+        r'\\\\times': r' times ',
+        r'\\\\div': r' divided by ',
+        r'\\\\pm': r' plus or minus ',
+        r'\\\\mp': r' minus or plus ',
+        r'\\\\rightarrow': r' tends to ',
+        r'\\\\,': r' ',  # Replace LaTeX small space with regular space
+        r'\\\\text\{([^}]+)\}': r' \1 ',  # Capture and speak the text within \\text{}
+        # Add more replacements as needed
+    }
+
+    # Apply the replacements
+    for pattern, replacement in replacements.items():
+        text_for_voice = re.sub(pattern, replacement, text_for_voice)
+
+    # Handle special cases or additional patterns as necessary
+
+    text_for_voice = text_for_voice.replace('$ ','').replace(' $','')
+    text_for_voice = text_for_voice.replace('$','').replace('$','')
+    text_for_voice = remove_pattern_for_Markdown(text_for_voice)
+
+    return text_for_voice
 
 
 @app.get("/")
